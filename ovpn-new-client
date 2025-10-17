@@ -1,0 +1,68 @@
+#!/bin/bash
+
+set -e
+
+cd /openvpn/easy-rsa
+
+if [ ! -v PUBLIC_IP ]; then
+echo "PUBLIC_IP var required"
+exit 0
+fi
+
+if [ -z $1 ]; then
+echo "Execute command like : new.sh <client_name>"
+exit 0
+fi
+
+CLIENT_NAME=$1
+
+if [ ! -f /openvpn/easy-rsa/pki/issued/$CLIENT_NAME.crt ]; then
+./easyrsa gen-req $CLIENT_NAME nopass &> /dev/null
+./easyrsa sign-req client $CLIENT_NAME &> /dev/null
+fi
+
+cat <<EOF >/tmp/client.config.ovpn
+tls-client
+client
+dev tun
+proto udp
+remote $PUBLIC_IP $PUBLIC_PORT
+resolv-retry infinite
+nobind
+persist-key
+persist-tun
+comp-lzo
+cipher AES-256-CBC
+verb 3
+auth-nocache
+script-security 2
+key-direction 1
+EOF
+
+if [ -v LDAP_URL ]; then
+cat <<EOF >>/tmp/client.config.ovpn
+auth-user-pass
+EOF
+fi
+
+if [ -v EXTRA_CLIENT_PARAMS ]; then
+cat <<EOF >>/tmp/client.config.ovpn
+$EXTRA_CLIENT_PARAMS
+EOF
+fi
+
+cat /tmp/client.config.ovpn
+echo "<ca>"
+cat /openvpn/ca.crt
+echo "</ca>"
+echo "<tls-auth>"
+cat /openvpn/ta.key
+echo "</tls-auth>"
+echo "<key>"
+cat /openvpn/easy-rsa/pki/private/$CLIENT_NAME.key
+echo "</key>"
+echo "<cert>"
+cat /openvpn/easy-rsa/pki/issued/$CLIENT_NAME.crt
+echo "</cert>"
+
+

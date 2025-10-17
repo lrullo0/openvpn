@@ -1,0 +1,19 @@
+volumes:
+  openvpn:
+services:
+  openvpn:
+    image: audiolabelkartea/openvpn
+    platform: linux/amd64
+    build: .
+    privileged: true
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - MKNOD
+    ports:
+      - 1194:1194/udp
+    restart: unless-stopped
+    volumes:
+      - openvpn:/openvpn
+    env_file: ".env"
