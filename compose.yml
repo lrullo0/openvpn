@@ -2,7 +2,7 @@ volumes:
   openvpn:
 services:
   openvpn:
-    image: audiolabelkartea/openvpn
+    image: registry.audio-lab.org/openvpn
     platform: linux/amd64
     build: .
     privileged: true
